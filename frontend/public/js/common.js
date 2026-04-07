@@ -6,6 +6,22 @@ function apiJsonOk(res, data) {
   return !!(res && res.ok && data && data.ok === true);
 }
 
+/**
+ * Human-readable login error when HTTP status and JSON disagree (e.g. 200 with empty body).
+ */
+function loginErrorMessage(res, data) {
+  if (data && data.message) return data.message;
+  if (res && res.ok && (!data || data.ok !== true)) {
+    return (
+      'Login did not complete: server returned HTTP ' +
+      res.status +
+      ' but not { ok: true }. In DevTools → Network → POST /api/login, check the Response. ' +
+      'Use your Node app URL (not a static site); confirm /api/health shows the database.'
+    );
+  }
+  return 'Login failed (' + (res ? res.status : '?') + ').';
+}
+
 async function getSession() {
   const res = await fetch('/api/session', { credentials: 'include' });
   const data = await res.json().catch(() => ({}));

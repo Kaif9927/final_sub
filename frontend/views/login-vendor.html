@@ -40,6 +40,7 @@
         fetch("/api/login", {
           method: "POST",
           credentials: "include",
+          cache: "no-store",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: document.getElementById("username").value.trim(),
@@ -54,7 +55,7 @@
           })
           .then(function (x) {
             if (!apiJsonOk(x.r, x.d)) {
-              err.textContent = (x.d && x.d.message) || "Failed";
+              err.textContent = loginErrorMessage(x.r, x.d);
               return;
             }
             window.location.href = "/dashboard.html";

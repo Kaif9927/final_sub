@@ -117,6 +117,7 @@
           fetch("/api/login", {
             method: "POST",
             credentials: "include",
+            cache: "no-store",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: u, password: p }),
           })
@@ -146,8 +147,7 @@
                 return;
               }
               if (!apiJsonOk(x.r, x.data)) {
-                err.textContent =
-                  (x.data && x.data.message) || "Login failed (" + x.r.status + ").";
+                err.textContent = loginErrorMessage(x.r, x.data);
                 return;
               }
               window.location.href = "/dashboard.html";
