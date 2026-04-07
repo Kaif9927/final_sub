@@ -101,6 +101,13 @@ if (!databaseUrl) {
 
 app.use(session(sessionOpts));
 
+/** Avoid stale cached empty API responses confusing the login UI (HTTP 200 + empty body). */
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
+
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');

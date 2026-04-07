@@ -57,9 +57,14 @@ async function login(req, res) {
       req.session.save((err) => (err ? reject(err) : resolve()));
     });
 
-    return res.json({
+    return res.status(200).json({
       ok: true,
-      user: { id: row.id, username: row.username, email: row.email, role: row.role }
+      user: {
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        role: row.role
+      }
     });
   } catch (err) {
     console.error('login err', err);

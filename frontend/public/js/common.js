@@ -3,20 +3,26 @@
  * (misconfigured proxies or bugs could otherwise send users through as "logged in").
  */
 function apiJsonOk(res, data) {
-  return !!(res && res.ok && data && data.ok === true);
+  if (!res || !res.ok || !data || typeof data !== 'object') return false;
+  return data.ok === true || data.ok === 1;
 }
 
 /**
  * Human-readable login error when HTTP status and JSON disagree (e.g. 200 with empty body).
  */
 function loginErrorMessage(res, data) {
-  if (data && data.message) return data.message;
-  if (res && res.ok && (!data || data.ok !== true)) {
+  if (data && data.message) return String(data.message);
+  if (res && res.ok) {
+    const snippet =
+      data && typeof data === 'object' && Object.keys(data).length
+        ? ' Response JSON: ' + JSON.stringify(data).slice(0, 160)
+        : ' Empty or missing JSON body.';
     return (
-      'Login did not complete: server returned HTTP ' +
+      'Login did not return { ok: true } (HTTP ' +
       res.status +
-      ' but not { ok: true }. In DevTools → Network → POST /api/login, check the Response. ' +
-      'Use your Node app URL (not a static site); confirm /api/health shows the database.'
+      ').' +
+      snippet +
+      ' Open DevTools → Network → POST /api/login → Response. Use your Render Web Service URL (not a static site). Check /api/health.'
     );
   }
   return 'Login failed (' + (res ? res.status : '?') + ').';
