@@ -2,6 +2,11 @@ const { Pool } = require('pg');
 
 require('./loadEnv').loadEnv();
 
+/** Render Dashboard often uses `DB_URL`; docs use `DATABASE_URL`. Either works. */
+function getDatabaseUrl() {
+  return (process.env.DATABASE_URL || process.env.DB_URL || '').trim();
+}
+
 function mysqlPlaceholdersToPg(sql) {
   let n = 0;
   return sql.replace(/\?/g, () => `$${++n}`);
@@ -25,12 +30,13 @@ function wrapMysqlStyleResult(result) {
   return [result.rows || []];
 }
 
+const connectionString = getDatabaseUrl();
 const useSsl =
-  process.env.DATABASE_URL &&
-  (process.env.DATABASE_URL.includes('render.com') || process.env.DATABASE_SSL === '1');
+  connectionString &&
+  (connectionString.includes('render.com') || process.env.DATABASE_SSL === '1');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString || undefined,
   max: 10,
   idleTimeoutMillis: 30000,
   ssl: useSsl ? { rejectUnauthorized: false } : undefined
@@ -65,4 +71,4 @@ async function getConnection() {
   };
 }
 
-module.exports = { query, getConnection, pool };
+module.exports = { query, getConnection, pool, getDatabaseUrl };

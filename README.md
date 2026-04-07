@@ -25,7 +25,7 @@ Express + **PostgreSQL** with **session auth**: memberships, events, bookings, a
 ### PostgreSQL (Render or local)
 
 1. Create a Postgres database (e.g. **Render Postgres** → copy **External Database URL**).
-2. Set **`DATABASE_URL`** on the Web Service (and in local `backend/.env`). See `backend/.env.example`.
+2. Set **`DATABASE_URL`** on the Web Service (and in local `backend/.env`). If you only have **`DB_URL`** in Render, that works too—the app reads **`DATABASE_URL` or `DB_URL`**. See `backend/.env.example`.
 3. Apply schema + seed **once**:
 
 ```bash

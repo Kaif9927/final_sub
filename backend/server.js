@@ -6,7 +6,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 
-const { pool } = require('./config/db');
+const { pool, getDatabaseUrl } = require('./config/db');
 const authController = require('./controllers/authController');
 const marketAdminController = require('./controllers/marketAdminController');
 
@@ -75,21 +75,21 @@ const sessionOpts = {
 };
 
 /** Postgres session store: survives Render restarts and works if more than one instance runs (MemoryStore does not). */
-const databaseUrl = (process.env.DATABASE_URL || '').trim();
+const databaseUrl = getDatabaseUrl();
 const isProdLike =
   process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 
 if (!databaseUrl) {
   if (isProdLike) {
     console.error(
-      '[session] DATABASE_URL is missing. Render runs with NODE_ENV=production; without DATABASE_URL, ' +
-        'sessions use MemoryStore and you will see: "MemoryStore is not designed for a production environment".\n' +
-        'Fix: link this Web Service to your Render PostgreSQL (or set DATABASE_URL in Environment), then redeploy.'
+      '[session] No database URL: set DATABASE_URL or DB_URL on this Web Service. ' +
+        'Without it, sessions use MemoryStore and you will see: "MemoryStore is not designed for a production environment".\n' +
+        'Fix: paste your Render Postgres External URL as DATABASE_URL, or keep using DB_URL (supported), then redeploy.'
     );
     process.exit(1);
   }
   console.warn(
-    '[session] DATABASE_URL not set — using MemoryStore (OK for local dev only).'
+    '[session] DATABASE_URL / DB_URL not set — using MemoryStore (OK for local dev only).'
   );
 } else {
   const pgSession = require('connect-pg-simple')(session);
