@@ -78,7 +78,8 @@ async function addCartItem(req, res) {
     if (!p.length) return res.status(400).json({ ok: false, message: 'Product not available.' });
     await db.query(
       `INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
+       ON CONFLICT (user_id, product_id)
+       DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity`,
       [uid, productId, qty]
     );
     res.json({ ok: true, message: 'Added to cart.' });

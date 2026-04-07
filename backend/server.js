@@ -6,7 +6,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 
-const pool = require('./config/db');
+const { pool } = require('./config/db');
 const authController = require('./controllers/authController');
 const marketAdminController = require('./controllers/marketAdminController');
 
@@ -19,6 +19,11 @@ const marketAdminRoutes = require('./routes/marketAdminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+/** Render (and other reverse proxies): HTTPS + correct session cookies */
+if (process.env.RENDER === 'true' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
@@ -62,7 +67,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       maxAge: 30 * 60 * 1000,
-      httpOnly: true
+      httpOnly: true,
+      secure: process.env.RENDER === 'true' || process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
     }
   })
 );

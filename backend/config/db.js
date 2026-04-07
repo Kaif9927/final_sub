@@ -1,16 +1,68 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
 require('./loadEnv').loadEnv();
 
-// env vars override these if set
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || '127.0.0.1',
-  user: process.env.DB_USER || 'root',
-  // keep password out of source control; set DB_PASSWORD in your host env
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'event',
-  waitForConnections: true,
-  connectionLimit: 10
+function mysqlPlaceholdersToPg(sql) {
+  let n = 0;
+  return sql.replace(/\?/g, () => `$${++n}`);
+}
+
+function buildPgText(text) {
+  let pgText = mysqlPlaceholdersToPg(text);
+  const t = text.trim();
+  if (/^INSERT\s+INTO/i.test(t) && !/RETURNING/i.test(text)) {
+    pgText += ' RETURNING id';
+  }
+  return pgText;
+}
+
+function wrapMysqlStyleResult(result) {
+  if (result.command === 'INSERT') {
+    const id =
+      result.rows && result.rows[0] && result.rows[0].id != null ? result.rows[0].id : null;
+    return [{ insertId: id, affectedRows: result.rowCount }];
+  }
+  return [result.rows || []];
+}
+
+const useSsl =
+  process.env.DATABASE_URL &&
+  (process.env.DATABASE_URL.includes('render.com') || process.env.DATABASE_SSL === '1');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined
 });
 
-module.exports = pool;
+async function query(text, params = []) {
+  const pgText = buildPgText(text);
+  const result = await pool.query(pgText, params);
+  return wrapMysqlStyleResult(result);
+}
+
+async function getConnection() {
+  const client = await pool.connect();
+  return {
+    async beginTransaction() {
+      await client.query('BEGIN');
+    },
+    async commit() {
+      await client.query('COMMIT');
+    },
+    async rollback() {
+      await client.query('ROLLBACK');
+    },
+    release() {
+      client.release();
+    },
+    async query(text, params = []) {
+      const pgText = buildPgText(text);
+      const result = await client.query(pgText, params || []);
+      return wrapMysqlStyleResult(result);
+    }
+  };
+}
+
+module.exports = { query, getConnection, pool };

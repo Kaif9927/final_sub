@@ -86,7 +86,7 @@ async function register(req, res) {
       return res.json({ ok: true, message: 'Account created. You can log in now.' });
     } catch (e) {
       await conn.rollback();
-      if (e.code === 'ER_DUP_ENTRY') {
+      if (e.code === 'ER_DUP_ENTRY' || e.code === '23505') {
         return res.status(400).json({ ok: false, message: 'Username already taken.' });
       }
       throw e;

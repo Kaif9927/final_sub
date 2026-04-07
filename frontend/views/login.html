@@ -120,19 +120,38 @@
             body: JSON.stringify({ username: u, password: p }),
           })
             .then(function (r) {
-              return r.json().then(function (data) {
-                return { r: r, data: data };
+              return r.text().then(function (text) {
+                var data = {};
+                if (text) {
+                  try {
+                    data = JSON.parse(text);
+                  } catch (e) {
+                    return {
+                      r: r,
+                      data: null,
+                      badBody: true,
+                    };
+                  }
+                }
+                return { r: r, data: data, badBody: false };
               });
             })
             .then(function (x) {
+              if (x.badBody) {
+                err.textContent =
+                  "Login API did not return JSON (HTTP " +
+                  x.r.status +
+                  "). Open this site from your Node Web Service URL (not a Static Site), or check /api/health.";
+                return;
+              }
               if (!x.r.ok) {
-                err.textContent = x.data.message || "Login failed.";
+                err.textContent = (x.data && x.data.message) || "Login failed (" + x.r.status + ").";
                 return;
               }
               window.location.href = "/dashboard.html";
             })
             .catch(function () {
-              err.textContent = "Network problem.";
+              err.textContent = "Network problem — request failed or timed out (e.g. server waking up).";
             });
         };
       })();

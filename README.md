@@ -1,6 +1,6 @@
 # Event Management System
 
-Express + MySQL app with **session auth**: legacy **memberships / events / bookings**, plus a **marketplace** flow (**admin**, **vendor**, **user** roles) aligned with the Technical Event Management wireframes—vendor directory, products, cart, checkout, order status, item requests, guest list, and admin maintenance for users and vendors.
+Express + **PostgreSQL** with **session auth**: memberships, events, bookings, and a **marketplace** (**admin**, **vendor**, **user**)—vendors, products, cart, checkout, orders, guest list, maintenance.
 
 ## Project structure
 
@@ -8,40 +8,32 @@ Express + MySQL app with **session auth**: legacy **memberships / events / booki
 |--------|----------------|
 | **`backend/`** | Node.js + Express: `server.js`, routes, controllers, DB config, `package.json` |
 | **`frontend/`** | UI: `views/` (HTML pages), `public/` (CSS, JS, flowchart, assets) |
-| **`database/`** | SQL: `init.sql` (full schema + seed + demo password repair), `upgrade_legacy.sql` (migrate old DBs) |
+| **`database/`** | `init_pg.sql` (schema + seed for PostgreSQL) |
 
 ## Prerequisites
 
 - Node.js 18+
-- MySQL 8+ (or compatible)
+- PostgreSQL 14+ (or Render Postgres)
 
 ## Database setup
 
-All SQL lives under **`database/`**.
+### PostgreSQL (Render or local)
 
-**New database** — from the repo root:
-
-```bash
-mysql -u root -p < database/init.sql
-```
-
-This creates `event`, all tables, seed data, and applies idempotent demo-password updates at the end.
-
-**Existing `event` DB** (older install without marketplace) — add marketplace tables and `vendor` role:
+1. Create a Postgres database (e.g. **Render Postgres** → copy **External Database URL**).
+2. Set **`DATABASE_URL`** on the Web Service (and in local `backend/.env`). See `backend/.env.example`.
+3. Apply schema + seed **once**:
 
 ```bash
-mysql -u root -p < database/upgrade_legacy.sql
+psql "$DATABASE_URL" -f database/init_pg.sql
 ```
 
-Do not run `upgrade_legacy.sql` on a database already created with `init.sql`.
+(Install PostgreSQL client tools, or use Render’s **Shell** on the Postgres instance with the file checked in.)
 
-Connection: `backend/config/db.js`. Env overrides:
+The app uses **`pg`** and **`DATABASE_URL`** only for connections (no `DB_HOST` / `DB_PORT` for Postgres).
 
-- `DB_HOST` (default `127.0.0.1`)
-- `DB_USER` (default `root`)
-- `DB_PASSWORD` (**no default** — set locally or in production)
-- `DB_NAME` (default `event`)
-- **`ALLOWED_ORIGINS`** — optional, comma-separated browser origins (e.g. `http://localhost:5173`) allowed to call the API with **credentials**. If unset, only same-origin requests need no CORS. Use this when the frontend is served from another URL than the Express app.
+### Other env
+
+- **`ALLOWED_ORIGINS`** — optional comma-separated origins for CORS with credentials (e.g. `https://your-app.onrender.com`).
 
 See `backend/.env.example`.
 
@@ -55,7 +47,23 @@ npm start
 
 Open `http://localhost:3000`.
 
-### Demo accounts (after `database/init.sql`)
+### Deploy on Render (example)
+
+**Web service:** Root Directory `backend`, Build `npm install`, Start `npm start`. Render sets `PORT` automatically.
+
+**Postgres (recommended):** Create **Render Postgres**, then on the **Web Service** set:
+
+| Name | Value |
+|------|--------|
+| `DATABASE_URL` | **External Database URL** from the Postgres dashboard (include `?sslmode=require` if offered; the app also enables TLS for `*.render.com` URLs). |
+| `SESSION_SECRET` | Long random string |
+| `ALLOWED_ORIGINS` | Your Web Service URL, e.g. `https://your-service.onrender.com` |
+
+Run **`database/init_pg.sql`** once against that database (see [Database setup](#database-setup)). Remove old **`DB_*`** / SkySQL variables if you were using MariaDB before.
+
+**Login / “Network problem”:** Use the **Node Web Service** URL (not a separate Static Site) so `/api/login` exists. Check `GET /api/health`.
+
+### Demo accounts (after `database/init_pg.sql`)
 
 | Role | Username | Password | Landing |
 |------|-----------|----------|---------|
