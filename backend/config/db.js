@@ -23,6 +23,13 @@ function parseMysqlUrl(url) {
 }
 
 function buildSslOption() {
+  const pem = (process.env.MYSQL_SSL_CA_PEM || '').trim();
+  if (pem.includes('BEGIN CERTIFICATE')) {
+    return {
+      ca: pem,
+      rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0'
+    };
+  }
   const caPath = (process.env.MYSQL_SSL_CA || '').trim();
   if (caPath && fs.existsSync(caPath)) {
     return {

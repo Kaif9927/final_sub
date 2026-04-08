@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "small event + membership app",
   "homepage": "https://acxiom-consulting-private-limited-1.onrender.com/",
+  "engines": {
+    "node": ">=18"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

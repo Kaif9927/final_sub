@@ -25,7 +25,7 @@ Express + **MariaDB / MySQL** with **session auth**: memberships, events, bookin
 2. In `backend/.env`, set either:
    - **`DATABASE_URL=mysql://user:password@host:port/database`** (URL-encode the password if it contains special characters), or
    - **`DB_HOST`**, **`DB_PORT`**, **`DB_USER`**, **`DB_PASSWORD`**, **`DB_NAME`** (often easier for SkySQL passwords with `=`, `^`, etc.).
-3. **TLS (SkySQL):** download the **certificate authority chain** from the service dashboard and set **`MYSQL_SSL_CA`** to the PEM file path on your machine. If you must skip verification for a quick test only, set **`MYSQL_SSL_REJECT_UNAUTHORIZED=0`** (insecure).
+3. **TLS (SkySQL):** download the **certificate authority chain**. Locally set **`MYSQL_SSL_CA`** to the PEM file path; on **Render** paste the full PEM into **`MYSQL_SSL_CA_PEM`**. Optional insecure fallback: **`MYSQL_SSL_REJECT_UNAUTHORIZED=0`**.
 4. Apply schema + seed **once** (from repo root, adjust host/port/user/db):
 
 ```bash
@@ -50,20 +50,19 @@ npm start
 
 Open `http://localhost:3000`.
 
-### Deploy (example)
+### Deploy on Render (full app: API + UI)
 
-**Web service:** Root Directory `backend`, Build `npm install`, Start `npm start`. Set **`PORT`** via the platform (e.g. Render sets it automatically).
+One **Web Service** serves Express, which hosts **`/api/*`** and the **`frontend/`** pages.
 
-**Database:** Point the service at your MariaDB/MySQL instance using **`DATABASE_URL`** (`mysql://...`) or **`DB_*`** variables plus **`MYSQL_SSL_CA`** when TLS is required. Run **`database/init_mysql.sql`** once against that database.
+| Setting | Value |
+|---------|--------|
+| **Root Directory** | `backend` |
+| **Build Command** | `npm install` |
+| **Start Command** | `npm start` |
 
-| Name | Value |
-|------|--------|
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Or `DATABASE_URL=mysql://...` |
-| `MYSQL_SSL_CA` | Path to CA PEM (SkySQL / many managed hosts) |
-| `SESSION_SECRET` | Long random string |
-| `ALLOWED_ORIGINS` | Optional; comma-separated origins if UI and API differ |
+**Environment variables:** copy from **`backend/.env.example`** into the Render dashboard (same names). Use **`MYSQL_SSL_CA_PEM`** for the SkySQL CA on Render (paste PEM text); local dev can use **`MYSQL_SSL_CA`** with a file path. Run **`database/init_mysql.sql`** once on your database. Do not set **`PORT`** (Render provides it).
 
-**Login / “Network problem”:** The browser must reach the same origin that serves `/api/login`. Check `GET /api/health`.
+Check **`GET /api/health`** after deploy. **`ALLOWED_ORIGINS`** is optional; leave unset when users open your Render URL only.
 
 ### Demo accounts (after `database/init_mysql.sql`)
 
