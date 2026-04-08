@@ -6,7 +6,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 
-const { createCorsMiddleware } = require('./config/cors');
+const { createCorsMiddleware, getAllowedOrigins } = require('./config/cors');
 const { pool, hasDatabaseConfig } = require('./config/db');
 const authController = require('./controllers/authController');
 const marketAdminController = require('./controllers/marketAdminController');
@@ -157,4 +157,12 @@ app.get('/flow', (req, res) => {
 app.listen(PORT, () => {
   console.log('Server up on http://localhost:' + PORT);
   console.log('Market admin POST /api/admin/market/vendors (add vendor) is active.');
+  const origins = getAllowedOrigins();
+  if (origins.length) {
+    console.log('[cors] Cross-origin browser UI allowed:', origins.join(', '));
+  } else {
+    console.warn(
+      '[cors] ALLOWED_ORIGINS is empty — browsers on another origin (e.g. a Render Static Site) will get CORS errors. Set ALLOWED_ORIGINS to that site URL (https://...).'
+    );
+  }
 });

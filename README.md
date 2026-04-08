@@ -97,6 +97,8 @@ Run the build from the **`frontend`** directory so paths resolve; set **`API_BAS
    `localStorage.setItem('ems_api_base','https://YOUR-API.onrender.com'); location.reload()`  
    (then set **`ALLOWED_ORIGINS`** on the backend to your static URL if you have not already).
 
+**CORS error (`No 'Access-Control-Allow-Origin'` on `POST …/api/login`):** set **`ALLOWED_ORIGINS`** on the **backend Web Service** (not the static site) to your **frontend origin only**, e.g. `https://final-sub.onrender.com` — exact scheme + host, **no** trailing slash, **no** quotes in the Render dashboard. Redeploy the backend after saving. Check service logs for `[cors] Cross-origin browser UI allowed: …`.
+
 ### Demo accounts (after `database/init_mysql.sql`)
 
 | Role | Username | Password | Landing |
