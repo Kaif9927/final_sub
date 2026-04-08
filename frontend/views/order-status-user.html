@@ -44,6 +44,8 @@
         </table>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (u) {
@@ -53,11 +55,11 @@
         }
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
-        fetch("/api/shop/orders/mine", { credentials: "include" })
+        fetch(apiUrl("/api/shop/orders/mine"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -83,7 +85,7 @@
               tb.appendChild(tr);
             });
           });
-        fetch("/api/shop/requests/mine", { credentials: "include" })
+        fetch(apiUrl("/api/shop/requests/mine"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })

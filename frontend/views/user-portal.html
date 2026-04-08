@@ -60,6 +60,8 @@
         <div class="err" id="gerr"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (u) {
@@ -70,14 +72,14 @@
         document.getElementById("welcome").textContent = "WELCOME " + u.username.toUpperCase();
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
         loadG();
         document.getElementById("addG").onclick = function () {
           document.getElementById("gerr").textContent = "";
-          fetch("/api/shop/guests", {
+          fetch(apiUrl("/api/shop/guests"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -96,7 +98,7 @@
             });
         };
         function loadG() {
-          fetch("/api/shop/guests", { credentials: "include" })
+          fetch(apiUrl("/api/shop/guests"), { credentials: "include" })
             .then(function (r) {
               return r.json();
             })
@@ -108,7 +110,7 @@
                 var tr = document.createElement("tr");
                 tr.innerHTML = "<td>" + g.name + '</td><td><button type="button" data-id="' + g.id + '">Remove</button></td>';
                 tr.querySelector("button").onclick = function () {
-                  fetch("/api/shop/guests/" + g.id, { method: "DELETE", credentials: "include" }).then(loadG);
+                  fetch(apiUrl("/api/shop/guests/" + g.id), { method: "DELETE", credentials: "include" }).then(loadG);
                 };
                 tb.appendChild(tr);
               });

@@ -64,10 +64,12 @@
         </table>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       function load() {
-        fetch("/api/admin/market/vendors", { credentials: "include" })
+        fetch(apiUrl("/api/admin/market/vendors"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -117,7 +119,7 @@
                 v.id +
                 "'>Delete</button></td>";
               tr.querySelector("[data-sv]").onclick = function () {
-                fetch("/api/admin/market/vendors/" + v.id, {
+                fetch(apiUrl("/api/admin/market/vendors/" + v.id), {
                   method: "PUT",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
@@ -130,7 +132,7 @@
               };
               tr.querySelector("[data-dv]").onclick = function () {
                 if (!confirm("Delete vendor and login?")) return;
-                fetch("/api/admin/market/vendors/" + v.id, { method: "DELETE", credentials: "include" }).then(load);
+                fetch(apiUrl("/api/admin/market/vendors/" + v.id), { method: "DELETE", credentials: "include" }).then(load);
               };
               b.appendChild(tr);
             });
@@ -143,7 +145,7 @@
         }
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
@@ -162,7 +164,7 @@
             addErrEl.textContent = "Username, password, and business name are required.";
             return;
           }
-          fetch("/api/admin/market/vendors", {
+          fetch(apiUrl("/api/admin/market/vendors"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },

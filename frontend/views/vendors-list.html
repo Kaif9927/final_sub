@@ -26,13 +26,15 @@
       </div>
       <div class="module-grid" id="grid"></div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (u) {
         if (!u) return;
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
@@ -58,7 +60,7 @@
             g.appendChild(a);
           });
         }
-        fetch("/api/shop/vendors", { credentials: "include" })
+        fetch(apiUrl("/api/shop/vendors"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })

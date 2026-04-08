@@ -31,6 +31,8 @@
         <div class="err" id="err"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       var params = new URLSearchParams(location.search);
@@ -43,7 +45,7 @@
         }
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
@@ -54,7 +56,7 @@
             document.getElementById("err").textContent = "Pick status and order.";
             return;
           }
-          fetch("/api/vendor/orders/" + encodeURIComponent(orderId) + "/status", {
+          fetch(apiUrl("/api/vendor/orders/" + encodeURIComponent(orderId) + "/status"), {
             method: "PATCH",
             credentials: "include",
             headers: { "Content-Type": "application/json" },

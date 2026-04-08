@@ -29,6 +29,8 @@
         <div class="err" id="err"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (u) {
@@ -39,7 +41,7 @@
         document.getElementById("go").onclick = function () {
           document.getElementById("err").textContent = "";
           var vid = document.getElementById("vid").value.trim();
-          fetch("/api/shop/requests", {
+          fetch(apiUrl("/api/shop/requests"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },

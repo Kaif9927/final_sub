@@ -39,10 +39,12 @@
         <div class="err" id="err"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       function load() {
-        fetch("/api/shop/cart", { credentials: "include" })
+        fetch(apiUrl("/api/shop/cart"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -80,7 +82,7 @@
                 "'>Remove</button></td>";
               tr.querySelector("select").onchange = function (ev) {
                 var q = parseInt(ev.target.value, 10);
-                fetch("/api/shop/cart/items/" + i.product_id, {
+                fetch(apiUrl("/api/shop/cart/items/" + i.product_id), {
                   method: "PATCH",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
@@ -88,7 +90,7 @@
                 }).then(load);
               };
               tr.querySelector("[data-del]").onclick = function () {
-                fetch("/api/shop/cart/items/" + i.product_id, {
+                fetch(apiUrl("/api/shop/cart/items/" + i.product_id), {
                   method: "DELETE",
                   credentials: "include"
                 }).then(load);
@@ -105,13 +107,13 @@
         }
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
         load();
         document.getElementById("clear").onclick = function () {
-          fetch("/api/shop/cart", { method: "DELETE", credentials: "include" }).then(load);
+          fetch(apiUrl("/api/shop/cart"), { method: "DELETE", credentials: "include" }).then(load);
         };
         document.getElementById("co").onclick = function () {
           window.location.href = "/checkout.html";

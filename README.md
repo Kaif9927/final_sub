@@ -64,6 +64,30 @@ One **Web Service** serves Express, which hosts **`/api/*`** and the **`frontend
 
 Check **`GET /api/health`** after deploy. **`ALLOWED_ORIGINS`** is optional; leave unset when users open your Render URL only.
 
+### Deploy on Render (split: Static Site UI + Web Service API)
+
+Use this when the **HTML** is a **Static Site** (e.g. `final-sub.onrender.com`) and **`/api/*`** is only on another **Web Service**. Otherwise login fails with “empty JSON” because `POST /api/login` would hit the static host.
+
+**Backend (Web Service, root `backend`):**
+
+| Name | Value |
+|------|--------|
+| **`ALLOWED_ORIGINS`** | Your static site origin only, e.g. `https://final-sub.onrender.com` (comma-separated if several). |
+| *(rest)* | Same DB / `SESSION_SECRET` / TLS vars as above. |
+
+**Static Site (root `frontend`):**
+
+| Name | Value |
+|------|--------|
+| **`API_BASE_URL`** | Your API Web Service origin, e.g. `https://your-api-service.onrender.com` (no path, no trailing slash). |
+
+| Field | Value |
+|-------|--------|
+| **Build Command** | `mkdir -p dist && cp -r public/* dist/ && cp views/*.html dist/ && cp dist/login.html dist/index.html && node ../scripts/inject-api-base.cjs dist/js/api-config.js` |
+| **Publish Directory** | `dist` |
+
+Run the build from the **`frontend`** directory so paths resolve; set **`API_BASE_URL`** in the Static Site **Environment** in Render. The inject script rewrites `dist/js/api-config.js` so the browser calls the API host for `fetch` / session cookies.
+
 ### Demo accounts (after `database/init_mysql.sql`)
 
 | Role | Username | Password | Landing |

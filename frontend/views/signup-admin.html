@@ -34,10 +34,11 @@
         <div class="err" id="err"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
     <script>
       document.getElementById("go").onclick = function () {
         document.getElementById("err").textContent = "";
-        fetch("/api/register", {
+        fetch(apiUrl("/api/register"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

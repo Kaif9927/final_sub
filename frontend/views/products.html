@@ -21,6 +21,8 @@
       <div class="module-grid" id="grid"></div>
       <div class="err" id="err"></div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       var params = new URLSearchParams(location.search);
@@ -29,7 +31,7 @@
         if (!u) return;
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
@@ -37,7 +39,7 @@
           document.getElementById("err").textContent = "Missing vendorId in URL.";
           return;
         }
-        fetch("/api/shop/vendors/" + encodeURIComponent(vid), { credentials: "include" })
+        fetch(apiUrl("/api/shop/vendors/" + encodeURIComponent(vid)), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -48,7 +50,7 @@
                 (d.vendor.category || "") + " · " + (d.vendor.contact_details || "");
             }
           });
-        fetch("/api/shop/vendors/" + encodeURIComponent(vid) + "/products", { credentials: "include" })
+        fetch(apiUrl("/api/shop/vendors/" + encodeURIComponent(vid) + "/products"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -79,7 +81,7 @@
                   document.getElementById("err").textContent = "Only customer accounts use the cart.";
                   return;
                 }
-                fetch("/api/shop/cart/items", {
+                fetch(apiUrl("/api/shop/cart/items"), {
                   method: "POST",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },

@@ -50,10 +50,12 @@
         </table>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       function loadProducts() {
-        fetch("/api/vendor/products", { credentials: "include" })
+        fetch(apiUrl("/api/vendor/products"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -78,7 +80,7 @@
                 "'>Delete</button></td>";
               tr.querySelector("button").onclick = function () {
                 if (!confirm("Delete?")) return;
-                fetch("/api/vendor/products/" + p.id, { method: "DELETE", credentials: "include" }).then(loadProducts);
+                fetch(apiUrl("/api/vendor/products/" + p.id), { method: "DELETE", credentials: "include" }).then(loadProducts);
               };
               tb.appendChild(tr);
             });
@@ -92,14 +94,14 @@
         document.getElementById("welcome").textContent = "Welcome " + u.username;
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
         loadProducts();
         document.getElementById("addP").onclick = function () {
           document.getElementById("err").textContent = "";
-          fetch("/api/vendor/products", {
+          fetch(apiUrl("/api/vendor/products"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },

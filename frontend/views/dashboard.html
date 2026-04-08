@@ -91,6 +91,9 @@
       </div>
     </footer>
 
+    <script src="/js/api-config.js"></script>
+
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (user) {
@@ -104,7 +107,7 @@
 
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).finally(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).finally(function () {
             window.location.href = "/";
           });
         };
@@ -114,7 +117,7 @@
       });
 
       function loadEvents() {
-        fetch("/api/events", { credentials: "include" })
+        fetch(apiUrl("/api/events"), { credentials: "include" })
           .then((r) => r.json())
           .then((data) => {
             document.getElementById("eventsLoading").classList.add("hidden");
@@ -171,7 +174,7 @@
       }
 
       function loadMine() {
-        fetch("/api/transactions/mine", { credentials: "include" })
+        fetch(apiUrl("/api/transactions/mine"), { credentials: "include" })
           .then((r) => r.json())
           .then((data) => {
             document.getElementById("mineLoading").classList.add("hidden");

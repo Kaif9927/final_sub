@@ -48,6 +48,8 @@
         </table>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (u) {
@@ -57,12 +59,12 @@
         }
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
         function load() {
-          fetch("/api/vendor/orders", { credentials: "include" })
+          fetch(apiUrl("/api/vendor/orders"), { credentials: "include" })
             .then(function (r) {
               return r.json();
             })
@@ -94,7 +96,7 @@
                 tb.appendChild(tr);
               });
             });
-          fetch("/api/vendor/requests", { credentials: "include" })
+          fetch(apiUrl("/api/vendor/requests"), { credentials: "include" })
             .then(function (r) {
               return r.json();
             })
@@ -120,7 +122,7 @@
                   r0.id +
                   "'>Delete</button></td>";
                 tr.querySelector("button").onclick = function () {
-                  fetch("/api/vendor/requests/" + r0.id, { method: "DELETE", credentials: "include" }).then(load);
+                  fetch(apiUrl("/api/vendor/requests/" + r0.id), { method: "DELETE", credentials: "include" }).then(load);
                 };
                 tb.appendChild(tr);
               });

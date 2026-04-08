@@ -62,11 +62,13 @@
         </table>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       function load() {
         document.getElementById("tblErr").textContent = "";
-        fetch("/api/admin/market/users", { credentials: "include" })
+        fetch(apiUrl("/api/admin/market/users"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -94,7 +96,7 @@
                 "'>Delete</button></td>";
               tr.querySelector("[data-up]").onclick = function () {
                 var inp = tr.querySelector("input[data-id='" + x.id + "']");
-                fetch("/api/admin/market/users/" + x.id, {
+                fetch(apiUrl("/api/admin/market/users/" + x.id), {
                   method: "PUT",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
@@ -105,7 +107,7 @@
                 if (!confirm("Delete user " + x.username + "?")) return;
                 var te = document.getElementById("tblErr");
                 te.textContent = "";
-                fetch("/api/admin/market/users/" + x.id, { method: "DELETE", credentials: "include" })
+                fetch(apiUrl("/api/admin/market/users/" + x.id), { method: "DELETE", credentials: "include" })
                   .then(function (r) {
                     return r.json().then(function (j) {
                       return { r: r, j: j };
@@ -133,14 +135,14 @@
         }
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).then(function () {
             location.href = "/";
           });
         };
         load();
         document.getElementById("add").onclick = function () {
           document.getElementById("e1").textContent = "";
-          fetch("/api/admin/market/users", {
+          fetch(apiUrl("/api/admin/market/users"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },

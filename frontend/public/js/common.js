@@ -22,14 +22,14 @@ function loginErrorMessage(res, data) {
       res.status +
       ').' +
       snippet +
-      ' Open DevTools → Network → POST /api/login → Response. Use your Render Web Service URL (not a static site). Check /api/health.'
+      ' Open DevTools → Network → POST /api/login → Response. If the UI is on a different host than the API, set window.__API_BASE__ (see /js/api-config.js) and ALLOWED_ORIGINS on the backend. Check /api/health on the API host.'
     );
   }
   return 'Login failed (' + (res ? res.status : '?') + ').';
 }
 
 async function getSession() {
-  const res = await fetch('/api/session', { credentials: 'include' });
+  const res = await fetch(apiUrl('/api/session'), { credentials: 'include' });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return null;
   return data.user || null;
@@ -46,7 +46,7 @@ function redirectIfGuest() {
 }
 
 async function apiJson(url, options = {}) {
-  const res = await fetch(url, {
+  const res = await fetch(apiUrl(url), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     ...options

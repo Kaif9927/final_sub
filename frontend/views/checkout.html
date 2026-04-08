@@ -57,6 +57,8 @@
         <div class="err" id="err"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       redirectIfGuest().then(function (u) {
@@ -64,7 +66,7 @@
           window.location.href = "/login-user.html";
           return;
         }
-        fetch("/api/shop/cart", { credentials: "include" })
+        fetch(apiUrl("/api/shop/cart"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -74,7 +76,7 @@
           });
         document.getElementById("order").onclick = function () {
           document.getElementById("err").textContent = "";
-          fetch("/api/shop/checkout", {
+          fetch(apiUrl("/api/shop/checkout"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },

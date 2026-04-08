@@ -38,17 +38,24 @@ app.use(express.urlencoded({ extended: true }));
 /** Static assets before session: no DB round-trip for /css, /js, /img (and MIME types stay correct). */
 app.use(express.static(publicRoot));
 
+const allowCrossOriginUi =
+  (process.env.ALLOWED_ORIGINS || '').trim().length > 0;
+const prodLikeCookie =
+  process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+
 const sessionOpts = {
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
-  proxy: process.env.RENDER === 'true' || process.env.NODE_ENV === 'production',
+  proxy: prodLikeCookie,
   cookie: {
     path: '/',
     maxAge: 30 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.RENDER === 'true' || process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    /** SameSite=None requires Secure; browsers reject insecure cross-site cookies. */
+    secure: allowCrossOriginUi ? true : prodLikeCookie,
+    /** Cross-origin UI (static site) + API on another host needs SameSite=None + Secure. */
+    sameSite: allowCrossOriginUi ? 'none' : 'lax'
   }
 };
 

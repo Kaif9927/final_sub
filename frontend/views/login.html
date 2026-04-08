@@ -101,6 +101,7 @@
       </div>
     </footer>
 
+    <script src="/js/api-config.js"></script>
     <script src="/js/common.js"></script>
     <script>
       (function () {
@@ -114,7 +115,7 @@
             err.textContent = "Fill in both fields.";
             return;
           }
-          fetch("/api/login", {
+          fetch(apiUrl("/api/login"), {
             method: "POST",
             credentials: "include",
             cache: "no-store",
@@ -143,7 +144,7 @@
                 err.textContent =
                   "Login API did not return JSON (HTTP " +
                   x.r.status +
-                  "). Open this site from your Node Web Service URL (not a Static Site), or check /api/health.";
+                  "). Point the UI at your API: set API base in /js/api-config.js (or static-site build env), or use one Web Service for UI+API. Check /api/health on the API host.";
                 return;
               }
               if (!apiJsonOk(x.r, x.data)) {

@@ -93,6 +93,9 @@
       </div>
     </footer>
 
+    <script src="/js/api-config.js"></script>
+
+
     <script src="/js/common.js"></script>
     <script>
       let membershipRows = [];
@@ -104,7 +107,7 @@
 
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).finally(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).finally(function () {
             window.location.href = "/";
           });
         };
@@ -118,7 +121,7 @@
       }
 
       function loadMembershipReport() {
-        fetch("/api/reports/membership", { credentials: "include" })
+        fetch(apiUrl("/api/reports/membership"), { credentials: "include" })
           .then((r) => r.json())
           .then((data) => {
             if (!data.ok) {
@@ -179,7 +182,7 @@
       }
 
       function loadParticipation() {
-        fetch("/api/reports/participation", { credentials: "include" })
+        fetch(apiUrl("/api/reports/participation"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })

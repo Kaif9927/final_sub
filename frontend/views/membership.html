@@ -184,6 +184,9 @@
       </div>
     </footer>
 
+    <script src="/js/api-config.js"></script>
+
+
     <script src="/js/common.js"></script>
     <script>
       let loadedMembership = null;
@@ -202,7 +205,7 @@
 
       function loadAccounts() {
         document.getElementById("acctTblErr").textContent = "";
-        fetch("/api/admin/market/users", { credentials: "include" })
+        fetch(apiUrl("/api/admin/market/users"), { credentials: "include" })
           .then(function (r) {
             return r.json();
           })
@@ -286,7 +289,7 @@
                   reloadMembershipUsers();
                 }
 
-                fetch("/api/admin/market/users/" + x.id, {
+                fetch(apiUrl("/api/admin/market/users/" + x.id), {
                   method: "PUT",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
@@ -314,7 +317,7 @@
                       te.textContent = "Business name is required for vendors.";
                       return;
                     }
-                    fetch("/api/admin/market/vendors/" + x.vendor_id, {
+                    fetch(apiUrl("/api/admin/market/vendors/" + x.vendor_id), {
                       method: "PUT",
                       credentials: "include",
                       headers: { "Content-Type": "application/json" },
@@ -349,7 +352,7 @@
                 if (!confirm("Delete account " + x.username + "?")) return;
                 var te = document.getElementById("acctTblErr");
                 te.textContent = "";
-                fetch("/api/admin/market/users/" + x.id, { method: "DELETE", credentials: "include" })
+                fetch(apiUrl("/api/admin/market/users/" + x.id), { method: "DELETE", credentials: "include" })
                   .then(function (r) {
                     return r.json().then(function (j) {
                       return { r: r, j: j };
@@ -374,7 +377,7 @@
       }
 
       function reloadMembershipUsers() {
-        fetch("/api/users-for-membership", { credentials: "include" })
+        fetch(apiUrl("/api/users-for-membership"), { credentials: "include" })
           .then((r) => r.json())
           .then((d) => {
             const sel = document.getElementById("memberUser");
@@ -408,7 +411,7 @@
 
         document.getElementById("logout").onclick = function (e) {
           e.preventDefault();
-          fetch("/api/logout", { method: "POST", credentials: "include" }).finally(function () {
+          fetch(apiUrl("/api/logout"), { method: "POST", credentials: "include" }).finally(function () {
             window.location.href = "/";
           });
         };
@@ -440,7 +443,7 @@
             document.getElementById("e1").textContent = "Business name is required for vendors.";
             return;
           }
-          fetch("/api/admin/market/users", {
+          fetch(apiUrl("/api/admin/market/users"), {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -523,7 +526,7 @@
             document.getElementById("updErr").textContent = "Membership number required.";
             return;
           }
-          fetch("/api/memberships/" + encodeURIComponent(id), { credentials: "include" })
+          fetch(apiUrl("/api/memberships/" + encodeURIComponent(id)), { credentials: "include" })
             .then((r) => r.json())
             .then((d) => {
               if (!d.ok) {

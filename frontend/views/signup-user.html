@@ -52,11 +52,12 @@
         </p>
       </div>
     </footer>
+    <script src="/js/api-config.js"></script>
     <script>
       document.getElementById("go").onclick = function () {
         document.getElementById("err").textContent = "";
         document.getElementById("ok").textContent = "";
-        fetch("/api/register", {
+        fetch(apiUrl("/api/register"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

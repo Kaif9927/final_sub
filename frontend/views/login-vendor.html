@@ -32,12 +32,14 @@
         <div class="err" id="err"></div>
       </div>
     </div>
+    <script src="/js/api-config.js"></script>
+
     <script src="/js/common.js"></script>
     <script>
       document.getElementById("go").onclick = function () {
         var err = document.getElementById("err");
         err.textContent = "";
-        fetch("/api/login", {
+        fetch(apiUrl("/api/login"), {
           method: "POST",
           credentials: "include",
           cache: "no-store",
