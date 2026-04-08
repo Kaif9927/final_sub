@@ -157,12 +157,18 @@ app.get('/flow', (req, res) => {
 app.listen(PORT, () => {
   console.log('Server up on http://localhost:' + PORT);
   console.log('Market admin POST /api/admin/market/vendors (add vendor) is active.');
+  console.log('[cors] env from process:', {
+    ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || '(unset)',
+    CORS_ORIGIN: process.env.CORS_ORIGIN || '(unset)',
+    FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || '(unset)',
+    ALLOWED_ORIGIN: process.env.ALLOWED_ORIGIN || '(unset)'
+  });
   const origins = getAllowedOrigins();
   if (origins.length) {
     console.log('[cors] Cross-origin browser UI allowed:', origins.join(', '));
   } else {
     console.warn(
-      '[cors] ALLOWED_ORIGINS is empty — browsers on another origin (e.g. a Render Static Site) will get CORS errors. Set ALLOWED_ORIGINS to that site URL (https://...).'
+      '[cors] No origin allowlist — set ALLOWED_ORIGINS (or CORS_ORIGIN) on this Web Service to your static site URL, e.g. https://final-sub.onrender.com'
     );
   }
 });

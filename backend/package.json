@@ -13,7 +13,6 @@
     "db:bootstrap": "node scripts/bootstrap-db.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "bcryptjs": "^2.4.3",
     "express": "^4.18.2",
     "express-mysql-session": "^3.0.3",

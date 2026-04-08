@@ -122,7 +122,7 @@ Also: `reports.html` (events / memberships).
 
 ## API overview
 
-- **CORS**: `backend/config/cors.js` uses the `cors` package with `credentials: true` and a strict allowlist from `ALLOWED_ORIGINS` (comma-separated, normalized origins). If unset, no cross-origin CORS headers are sent. Preflight uses `OPTIONS` with `Access-Control-Max-Age` (24h).
+- **CORS**: `backend/config/cors.js` sets credentialed CORS from `ALLOWED_ORIGINS` / `CORS_ORIGIN` / `FRONTEND_ORIGIN` / `ALLOWED_ORIGIN` (comma-separated ok). If unset, no cross-origin headers. **OPTIONS** preflight is answered immediately (before session/DB).
 - Session cookie: `connect.sid`, ~30 min idle (`backend/server.js`).
 - **Auth**: `POST /api/login`, `POST /api/register`, `POST /api/logout`, `GET /api/session` (login may send `expectedRole` to enforce portal).
 - **Shop (customer)**: e.g. `GET /api/shop/vendors`, `GET /api/shop/products`, cart under `/api/shop/cart`, checkout `/api/shop/checkout`, guests `/api/shop/guests`, orders and item requests under `/api/shop/...`.

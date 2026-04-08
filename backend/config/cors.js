@@ -1,13 +1,10 @@
 /**
- * Cross-origin rules for credentialed requests (session cookies):
- * - Never use Access-Control-Allow-Origin: * with credentials.
- * - Reflect only origins listed in ALLOWED_ORIGINS (comma-separated, normalized).
- * - If unset/empty, no cross-origin CORS headers are sent (same-site / direct API use only).
+ * Credentialed CORS for split UI + API. Answers OPTIONS immediately so preflight
+ * never hits session/DB (avoids missing ACAO headers on slow/failed downstream).
  *
- * Also reads CORS_ORIGIN or FRONTEND_ORIGIN (single origin) if ALLOWED_ORIGINS is empty — helpful when the dashboard name is misremembered.
+ * Env (any; comma-separated ok for ALLOWED_ORIGINS): ALLOWED_ORIGINS, CORS_ORIGIN,
+ * FRONTEND_ORIGIN, ALLOWED_ORIGIN
  */
-const cors = require('cors');
-
 function normalizeOrigin(origin) {
   if (!origin || typeof origin !== 'string') {
     return '';
@@ -24,7 +21,8 @@ function getAllowedOrigins() {
   const raw = [
     process.env.ALLOWED_ORIGINS,
     process.env.CORS_ORIGIN,
-    process.env.FRONTEND_ORIGIN
+    process.env.FRONTEND_ORIGIN,
+    process.env.ALLOWED_ORIGIN
   ]
     .filter(Boolean)
     .join(',');
@@ -37,41 +35,50 @@ function getAllowedOrigins() {
     .filter(Boolean);
 }
 
+const ALLOW_HEADERS = [
+  'Content-Type',
+  'Authorization',
+  'X-Requested-With',
+  'Accept',
+  'Origin',
+  'Cache-Control',
+  'Pragma'
+].join(', ');
+
 /**
  * @returns {import('express').RequestHandler}
  */
 function createCorsMiddleware() {
-  return cors({
-    origin(origin, callback) {
-      const allowed = getAllowedOrigins();
-      if (allowed.length === 0) {
-        return callback(null, false);
-      }
-      if (!origin) {
-        return callback(null, true);
-      }
-      const normalized = normalizeOrigin(origin);
-      if (allowed.includes(normalized)) {
-        return callback(null, true);
-      }
-      console.warn('[cors] blocked request Origin:', normalized, '— allowlist:', allowed);
-      return callback(null, false);
-    },
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-      'Cache-Control',
-      'Pragma'
-    ],
-    exposedHeaders: ['Cache-Control', 'Content-Type', 'Pragma'],
-    maxAge: 86400,
-    optionsSuccessStatus: 204
-  });
+  return function corsMiddleware(req, res, next) {
+    const allowed = getAllowedOrigins();
+    if (allowed.length === 0) {
+      return next();
+    }
+
+    const origin = req.headers.origin;
+    if (!origin) {
+      return next();
+    }
+
+    const normalized = normalizeOrigin(origin);
+    if (!allowed.includes(normalized)) {
+      console.warn('[cors] blocked Origin:', normalized, 'allowlist:', allowed);
+      return next();
+    }
+
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', ALLOW_HEADERS);
+      res.setHeader('Access-Control-Max-Age', '86400');
+      return res.status(204).end();
+    }
+
+    next();
+  };
 }
 
 module.exports = {
