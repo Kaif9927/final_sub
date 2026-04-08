@@ -1,76 +1,124 @@
-const { Pool } = require('pg');
+const fs = require('fs');
+const mysql = require('mysql2/promise');
 
 require('./loadEnv').loadEnv();
 
-/** Render Dashboard often uses `DB_URL`; docs use `DATABASE_URL`. Either works. */
-function getDatabaseUrl() {
-  return (process.env.DATABASE_URL || process.env.DB_URL || '').trim();
-}
-
-function mysqlPlaceholdersToPg(sql) {
-  let n = 0;
-  return sql.replace(/\?/g, () => `$${++n}`);
-}
-
-function buildPgText(text) {
-  let pgText = mysqlPlaceholdersToPg(text);
-  const t = text.trim();
-  if (/^INSERT\s+INTO/i.test(t) && !/RETURNING/i.test(text)) {
-    pgText += ' RETURNING id';
+function parseMysqlUrl(url) {
+  const u = (url || '').trim();
+  if (!u.startsWith('mysql://')) return null;
+  try {
+    const parsed = new URL(u);
+    const database = parsed.pathname.replace(/^\//, '').split('?')[0];
+    const decode = (s) => (s ? decodeURIComponent(s) : '');
+    return {
+      host: parsed.hostname,
+      port: parsed.port ? parseInt(parsed.port, 10) : 3306,
+      user: decode(parsed.username),
+      password: decode(parsed.password),
+      database
+    };
+  } catch {
+    return null;
   }
-  return pgText;
 }
 
-function wrapMysqlStyleResult(result) {
-  if (result.command === 'INSERT') {
-    const id =
-      result.rows && result.rows[0] && result.rows[0].id != null ? result.rows[0].id : null;
-    return [{ insertId: id, affectedRows: result.rowCount }];
+function buildSslOption() {
+  const caPath = (process.env.MYSQL_SSL_CA || '').trim();
+  if (caPath && fs.existsSync(caPath)) {
+    return {
+      ca: fs.readFileSync(caPath),
+      rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0'
+    };
   }
-  return [result.rows || []];
+  if (process.env.MYSQL_SSL === '1' || process.env.DB_SSL === '1') {
+    return { rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0' };
+  }
+  const host = (
+    process.env.DB_HOST ||
+    process.env.MYSQL_HOST ||
+    ''
+  ).toLowerCase();
+  if (host.includes('skysql.com')) {
+    return { rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0' };
+  }
+  return undefined;
 }
 
-const connectionString = getDatabaseUrl();
-const useSsl =
-  Boolean(connectionString) &&
-  (connectionString.includes('render.com') ||
-    process.env.DATABASE_SSL === '1' ||
-    /[?&]sslmode=require/i.test(connectionString));
+function getMysqlConnectionOptions() {
+  const fromUrl =
+    parseMysqlUrl(process.env.DATABASE_URL) ||
+    parseMysqlUrl(process.env.DB_URL) ||
+    parseMysqlUrl(process.env.MYSQL_URL);
 
-const pool = new Pool({
-  connectionString: connectionString || undefined,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  ssl: useSsl ? { rejectUnauthorized: false } : undefined
+  const base = fromUrl || {
+    host: process.env.DB_HOST || process.env.MYSQL_HOST || '127.0.0.1',
+    port: parseInt(process.env.DB_PORT || process.env.MYSQL_PORT || '3306', 10),
+    user: process.env.DB_USER || process.env.MYSQL_USER,
+    password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD,
+    database: process.env.DB_NAME || process.env.MYSQL_DATABASE
+  };
+
+  const ssl = buildSslOption();
+  if (ssl) {
+    base.ssl = ssl;
+  }
+
+  return base;
+}
+
+function hasDatabaseConfig() {
+  const o = getMysqlConnectionOptions();
+  return Boolean(o.user && o.database && o.host);
+}
+
+function wrapMysqlStyleResult(rows) {
+  if (rows && typeof rows === 'object' && !Array.isArray(rows) && 'affectedRows' in rows) {
+    return [{ insertId: rows.insertId, affectedRows: rows.affectedRows }];
+  }
+  return [rows];
+}
+
+const connOpts = getMysqlConnectionOptions();
+const pool = mysql.createPool({
+  ...connOpts,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
 async function query(text, params = []) {
-  const pgText = buildPgText(text);
-  const result = await pool.query(pgText, params);
-  return wrapMysqlStyleResult(result);
+  const [rows] = await pool.query(text, params || []);
+  return wrapMysqlStyleResult(rows);
 }
 
 async function getConnection() {
-  const client = await pool.connect();
+  const conn = await pool.getConnection();
   return {
     async beginTransaction() {
-      await client.query('BEGIN');
+      await conn.beginTransaction();
     },
     async commit() {
-      await client.query('COMMIT');
+      await conn.commit();
     },
     async rollback() {
-      await client.query('ROLLBACK');
+      await conn.rollback();
     },
     release() {
-      client.release();
+      conn.release();
     },
     async query(text, params = []) {
-      const pgText = buildPgText(text);
-      const result = await client.query(pgText, params || []);
-      return wrapMysqlStyleResult(result);
+      const [rows] = await conn.query(text, params || []);
+      return wrapMysqlStyleResult(rows);
     }
   };
 }
 
-module.exports = { query, getConnection, pool, getDatabaseUrl };
+module.exports = {
+  query,
+  getConnection,
+  pool,
+  hasDatabaseConfig,
+  getMysqlConnectionOptions
+};

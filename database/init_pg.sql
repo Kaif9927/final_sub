@@ -1,4 +1,5 @@
--- PostgreSQL schema + seed for Render Postgres (or any PG 14+)
+-- LEGACY: This app now targets MariaDB / MySQL. Use init_mysql.sql instead.
+-- PostgreSQL schema + seed (historical reference only)
 -- From repo root (with DATABASE_URL or psql): psql "$DATABASE_URL" -f database/init_pg.sql
 
 CREATE TABLE users (

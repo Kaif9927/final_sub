@@ -2,7 +2,7 @@
 
 **Live app (Render):** [https://acxiom-consulting-private-limited-1.onrender.com/](https://acxiom-consulting-private-limited-1.onrender.com/)
 
-Express + **PostgreSQL** with **session auth**: memberships, events, bookings, and a **marketplace** (**admin**, **vendor**, **user**)—vendors, products, cart, checkout, orders, guest list, maintenance.
+Express + **MariaDB / MySQL** with **session auth**: memberships, events, bookings, and a **marketplace** (**admin**, **vendor**, **user**)—vendors, products, cart, checkout, orders, guest list, maintenance.
 
 ## Project structure
 
@@ -10,32 +10,29 @@ Express + **PostgreSQL** with **session auth**: memberships, events, bookings, a
 |--------|----------------|
 | **`backend/`** | Node.js + Express: `server.js`, routes, controllers, DB config, `package.json` |
 | **`frontend/`** | UI: `views/` (HTML pages), `public/` (CSS, JS, flowchart, assets) |
-| **`database/`** | `init_pg.sql` (schema + seed for PostgreSQL) |
+| **`database/`** | `init_mysql.sql` (schema + seed for MariaDB / MySQL); `init_pg.sql` is legacy only |
 
 ## Prerequisites
 
 - Node.js 18+
-- PostgreSQL 14+ (or Render Postgres)
+- MariaDB or MySQL 10.4+ / 8+ (e.g. **SkySQL**, local MariaDB, managed MySQL)
 
 ## Database setup
 
-### PostgreSQL (Render or local)
+### MariaDB / MySQL (e.g. SkySQL)
 
-1. Create a Postgres database (e.g. **Render Postgres**).
-2. On your **Render Web Service** (Node), set **`DATABASE_URL` or `DB_URL`** to the connection string:
-   - **Internal Database URL** (from the Postgres **Info** tab) is best when the Web Service and DB are both on Render (private network).
-   - **External Database URL** (host ends in `*.render.com`) is for connecting from your laptop or when internal URL is unavailable; TLS is used automatically.
-   - Paste the URL **exactly** as Render shows it—no spaces or line breaks inside the string.
-   - For local development, use the same variables in `backend/.env` (see `backend/.env.example`).
-4. Apply schema + seed **once**:
+1. Create a database (empty) in your provider’s UI and note **host**, **port**, **user**, **password**, and **database name**.
+2. In `backend/.env`, set either:
+   - **`DATABASE_URL=mysql://user:password@host:port/database`** (URL-encode the password if it contains special characters), or
+   - **`DB_HOST`**, **`DB_PORT`**, **`DB_USER`**, **`DB_PASSWORD`**, **`DB_NAME`** (often easier for SkySQL passwords with `=`, `^`, etc.).
+3. **TLS (SkySQL):** download the **certificate authority chain** from the service dashboard and set **`MYSQL_SSL_CA`** to the PEM file path on your machine. If you must skip verification for a quick test only, set **`MYSQL_SSL_REJECT_UNAUTHORIZED=0`** (insecure).
+4. Apply schema + seed **once** (from repo root, adjust host/port/user/db):
 
 ```bash
-psql "$DATABASE_URL" -f database/init_pg.sql
+mysql -h YOUR_HOST -P YOUR_PORT -u YOUR_USER -p YOUR_DATABASE < database/init_mysql.sql
 ```
 
-(Install PostgreSQL client tools, or use Render’s **Shell** on the Postgres instance with the file checked in.)
-
-The app uses **`pg`** with **`DATABASE_URL` or `DB_URL`** (no separate `DB_HOST` / `DB_PORT`). Sessions are stored in Postgres (**`session`** table, created automatically by `connect-pg-simple`) so logins survive restarts and load-balanced instances on Render. If logins behave strangely, confirm **`GET /api/health`** reports DB connected and run **`database/init_pg.sql`** so seeded users have bcrypt `password` hashes.
+The app uses **`mysql2`** for queries and **`express-mysql-session`** for the **`sessions`** table (created automatically if missing). Confirm **`GET /api/health`** reports DB connected. Seeded demo users use bcrypt hashes from `init_mysql.sql`.
 
 ### Other env
 
@@ -53,23 +50,22 @@ npm start
 
 Open `http://localhost:3000`.
 
-### Deploy on Render (example)
+### Deploy (example)
 
-**Web service:** Root Directory `backend`, Build `npm install`, Start `npm start`. Render sets `PORT` automatically.
+**Web service:** Root Directory `backend`, Build `npm install`, Start `npm start`. Set **`PORT`** via the platform (e.g. Render sets it automatically).
 
-**Postgres (recommended):** Create **Render Postgres**, then on the **Web Service** set:
+**Database:** Point the service at your MariaDB/MySQL instance using **`DATABASE_URL`** (`mysql://...`) or **`DB_*`** variables plus **`MYSQL_SSL_CA`** when TLS is required. Run **`database/init_mysql.sql`** once against that database.
 
 | Name | Value |
 |------|--------|
-| `DATABASE_URL` or `DB_URL` | **Internal** URL (Web + DB on Render) or **External** URL (from laptop / TLS). TLS is enabled for `*.render.com` URLs and when the URL contains `sslmode=require`. |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Or `DATABASE_URL=mysql://...` |
+| `MYSQL_SSL_CA` | Path to CA PEM (SkySQL / many managed hosts) |
 | `SESSION_SECRET` | Long random string |
-| `ALLOWED_ORIGINS` | Web Service origin, e.g. `https://acxiom-consulting-private-limited-1.onrender.com` |
+| `ALLOWED_ORIGINS` | Optional; comma-separated origins if UI and API differ |
 
-Run **`database/init_pg.sql`** once against that database (see [Database setup](#database-setup)). Remove old **`DB_*`** / SkySQL variables if you were using MariaDB before.
+**Login / “Network problem”:** The browser must reach the same origin that serves `/api/login`. Check `GET /api/health`.
 
-**Login / “Network problem”:** Use the **Node Web Service** URL (not a separate Static Site) so `/api/login` exists. Check `GET /api/health`.
-
-### Demo accounts (after `database/init_pg.sql`)
+### Demo accounts (after `database/init_mysql.sql`)
 
 | Role | Username | Password | Landing |
 |------|-----------|----------|---------|
@@ -92,7 +88,7 @@ Also: `reports.html` (events / memberships).
 
 ## API overview
 
-- **CORS**: Middleware in `server.js` reflects `ALLOWED_ORIGINS` for `Access-Control-Allow-Origin`, credentials, methods, headers, and answers `OPTIONS` preflight when the request `Origin` is in that list.
+- **CORS**: `backend/config/cors.js` uses the `cors` package with `credentials: true` and a strict allowlist from `ALLOWED_ORIGINS` (comma-separated, normalized origins). If unset, no cross-origin CORS headers are sent. Preflight uses `OPTIONS` with `Access-Control-Max-Age` (24h).
 - Session cookie: `connect.sid`, ~30 min idle (`backend/server.js`).
 - **Auth**: `POST /api/login`, `POST /api/register`, `POST /api/logout`, `GET /api/session` (login may send `expectedRole` to enforce portal).
 - **Shop (customer)**: e.g. `GET /api/shop/vendors`, `GET /api/shop/products`, cart under `/api/shop/cart`, checkout `/api/shop/checkout`, guests `/api/shop/guests`, orders and item requests under `/api/shop/...`.

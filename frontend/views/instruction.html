@@ -33,7 +33,7 @@
           <li><a href="/login-vendor.html">Vendor login</a> · <a href="/signup-vendor.html">Vendor signup</a></li>
           <li><a href="/login-user.html">User login</a> · <a href="/signup-user.html">User signup</a></li>
         </ul>
-        <h2>Demo accounts (after <code>database/init_pg.sql</code> on Postgres)</h2>
+        <h2>Demo accounts (after <code>database/init_mysql.sql</code> on MariaDB / MySQL)</h2>
         <table class="login-demo-table">
           <thead>
             <tr>
@@ -61,8 +61,10 @@
           </tbody>
         </table>
         <p class="page-lead" style="margin-top: 16px">
-          Set <code>DATABASE_URL</code> in <code>backend/.env</code>, then from repo root:
-          <code>psql "$DATABASE_URL" -f database/init_pg.sql</code>
+          Set <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code>
+          (or <code>DATABASE_URL=mysql://...</code>) in <code>backend/.env</code>. For SkySQL, set <code>MYSQL_SSL_CA</code> to your
+          downloaded CA file. Apply schema once:
+          <code>mysql -h HOST -P PORT -u USER -p DB_NAME &lt; database/init_mysql.sql</code>
         </p>
       </div>
     </div>

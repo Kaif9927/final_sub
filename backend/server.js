@@ -6,7 +6,8 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 
-const { pool, getDatabaseUrl } = require('./config/db');
+const { createCorsMiddleware } = require('./config/cors');
+const { pool, hasDatabaseConfig } = require('./config/db');
 const authController = require('./controllers/authController');
 const marketAdminController = require('./controllers/marketAdminController');
 
@@ -25,40 +26,17 @@ if (process.env.RENDER === 'true' || process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-/** CORS when the UI runs on another origin (comma-separated ALLOWED_ORIGINS in .env). Same-origin needs no CORS. */
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (ALLOWED_ORIGINS.length > 0 && origin && ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader(
-      'Access-Control-Allow-Methods',
-      'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'
-    );
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With'
-    );
-    res.setHeader('Vary', 'Origin');
-  }
-  if (req.method === 'OPTIONS' && ALLOWED_ORIGINS.length > 0) {
-    const o = req.headers.origin;
-    if (o && ALLOWED_ORIGINS.includes(o)) {
-      return res.status(204).end();
-    }
-  }
-  return next();
-});
+/** CORS: see config/cors.js. Set ALLOWED_ORIGINS when the browser UI is on a different origin than this API. */
+app.use(createCorsMiddleware());
 
 const frontendRoot = path.join(__dirname, '..', 'frontend');
+const publicRoot = path.join(frontendRoot, 'public');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+/** Static assets before session: no DB round-trip for /css, /js, /img (and MIME types stay correct). */
+app.use(express.static(publicRoot));
 
 const sessionOpts = {
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
@@ -74,29 +52,27 @@ const sessionOpts = {
   }
 };
 
-/** Postgres session store: survives Render restarts and works if more than one instance runs (MemoryStore does not). */
-const databaseUrl = getDatabaseUrl();
+/** MySQL session store (express-mysql-session). Survives restarts; use MemoryStore only when DB env is missing. */
 const isProdLike =
   process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 
-if (!databaseUrl) {
+if (!hasDatabaseConfig()) {
   if (isProdLike) {
     console.error(
-      '[session] No database URL: set DATABASE_URL or DB_URL on this Web Service. ' +
-        'Without it, sessions use MemoryStore and you will see: "MemoryStore is not designed for a production environment".\n' +
-        'Fix: paste your Render Postgres External URL as DATABASE_URL, or keep using DB_URL (supported), then redeploy.'
+      '[session] MySQL not configured: set DATABASE_URL (mysql://...) or DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME. ' +
+        'Without it, sessions use MemoryStore, which is unsafe for production.'
     );
     process.exit(1);
   }
   console.warn(
-    '[session] DATABASE_URL / DB_URL not set — using MemoryStore (OK for local dev only).'
+    '[session] MySQL not configured — using MemoryStore (local dev only). Set DB_* or DATABASE_URL in backend/.env.'
   );
 } else {
-  const pgSession = require('connect-pg-simple')(session);
-  sessionOpts.store = new pgSession({
-    pool,
-    createTableIfMissing: true
-  });
+  /** Reuse the same mysql2 pool as `config/db.js` so SSL (e.g. SkySQL) is applied.
+   * express-mysql-session's built-in pool omits `ssl` from options and breaks TLS-only hosts.
+   * Pass `pool.pool` (core callback pool): the promise wrapper rejects `query(..., cb)`. */
+  const MySQLStore = require('express-mysql-session')(session);
+  sessionOpts.store = new MySQLStore({ createDatabaseTable: true }, pool.pool);
 }
 
 app.use(session(sessionOpts));
@@ -170,8 +146,6 @@ app.get('/instruction.html', sendView('instruction.html'));
 app.get('/flow', (req, res) => {
   res.redirect(302, '/flowchart.html');
 });
-
-app.use(express.static(path.join(frontendRoot, 'public')));
 
 app.listen(PORT, () => {
   console.log('Server up on http://localhost:' + PORT);

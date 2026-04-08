@@ -55,7 +55,7 @@ async function createUser(req, res) {
       res.json({ ok: true, message: 'User created.', id: uid });
     } catch (e) {
       await conn.rollback();
-      if (e.code === 'ER_DUP_ENTRY' || e.code === '23505') {
+      if (e.code === 'ER_DUP_ENTRY') {
         return res.status(400).json({ ok: false, message: 'Username taken.' });
       }
       throw e;
@@ -103,8 +103,9 @@ async function deleteUser(req, res) {
     if (vrows.length) {
       const vid = vrows[0].id;
       await conn.query(
-        `DELETE FROM order_items oi USING products p
-         WHERE oi.product_id = p.id AND p.vendor_id = ?`,
+        `DELETE oi FROM order_items oi
+         INNER JOIN products p ON oi.product_id = p.id
+         WHERE p.vendor_id = ?`,
         [vid]
       );
       await conn.query('DELETE FROM products WHERE vendor_id = ?', [vid]);
@@ -165,7 +166,7 @@ async function createVendorAdmin(req, res) {
       return res.json({ ok: true, message: 'Vendor created.', id: uid });
     } catch (e) {
       await conn.rollback();
-      if (e.code === 'ER_DUP_ENTRY' || e.code === '23505') {
+      if (e.code === 'ER_DUP_ENTRY') {
         return res.status(400).json({ ok: false, message: 'Username taken.' });
       }
       throw e;
@@ -218,8 +219,9 @@ async function deleteVendorAdmin(req, res) {
     const uid = v[0].user_id;
     await conn.beginTransaction();
     await conn.query(
-      `DELETE FROM order_items oi USING products p
-       WHERE oi.product_id = p.id AND p.vendor_id = ?`,
+      `DELETE oi FROM order_items oi
+       INNER JOIN products p ON oi.product_id = p.id
+       WHERE p.vendor_id = ?`,
       [id]
     );
     await conn.query('DELETE FROM products WHERE vendor_id = ?', [id]);
