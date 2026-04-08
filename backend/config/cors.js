@@ -17,12 +17,17 @@ function normalizeOrigin(origin) {
   }
 }
 
+function stripBom(s) {
+  if (s == null || typeof s !== 'string') return '';
+  return s.replace(/^\uFEFF/, '').trim();
+}
+
 function getAllowedOrigins() {
   const raw = [
-    process.env.ALLOWED_ORIGINS,
-    process.env.CORS_ORIGIN,
-    process.env.FRONTEND_ORIGIN,
-    process.env.ALLOWED_ORIGIN
+    stripBom(process.env.ALLOWED_ORIGINS),
+    stripBom(process.env.CORS_ORIGIN),
+    stripBom(process.env.FRONTEND_ORIGIN),
+    stripBom(process.env.ALLOWED_ORIGIN)
   ]
     .filter(Boolean)
     .join(',');
@@ -72,7 +77,11 @@ function createCorsMiddleware() {
 
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', ALLOW_HEADERS);
+      const reqHdr = req.headers['access-control-request-headers'];
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        reqHdr && String(reqHdr).trim() ? String(reqHdr).trim() : ALLOW_HEADERS
+      );
       res.setHeader('Access-Control-Max-Age', '86400');
       return res.status(204).end();
     }

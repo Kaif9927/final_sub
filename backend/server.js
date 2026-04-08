@@ -38,8 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 /** Static assets before session: no DB round-trip for /css, /js, /img (and MIME types stay correct). */
 app.use(express.static(publicRoot));
 
-const allowCrossOriginUi =
-  (process.env.ALLOWED_ORIGINS || '').trim().length > 0;
+/** Must match any CORS allowlist env (not only ALLOWED_ORIGINS) or session cookies stay SameSite=Lax and cross-site login breaks. */
+const allowCrossOriginUi = getAllowedOrigins().length > 0;
 const prodLikeCookie =
   process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
 
@@ -94,7 +94,14 @@ app.use('/api', (req, res, next) => {
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ ok: true, db: 'connected', routes: { postAdminVendor: true } });
+    const n = getAllowedOrigins().length;
+    res.json({
+      ok: true,
+      db: 'connected',
+      routes: { postAdminVendor: true },
+      corsAllowlistCount: n,
+      sessionCrossSite: allowCrossOriginUi
+    });
   } catch (e) {
     res.status(500).json({ ok: false, db: 'error', message: e.message });
   }
