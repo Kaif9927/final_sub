@@ -99,6 +99,8 @@ Run the build from the **`frontend`** directory so paths resolve; set **`API_BAS
 
 **CORS error (`No 'Access-Control-Allow-Origin'` on `POST …/api/login`):** on the **backend Web Service** (not the static site), set **`ALLOWED_ORIGINS`** to your **frontend origin only**, e.g. `https://final-sub.onrender.com` — exact scheme + host, **no** trailing slash, **no** quotes. You can use **`CORS_ORIGIN`** or **`FRONTEND_ORIGIN`** instead if you prefer a single variable. Redeploy the backend after saving. Logs should show `[cors] Cross-origin browser UI allowed: …`. If the origin is wrong, logs may show `[cors] blocked request Origin: … — allowlist: …`.
 
+**`/api/health` or `/health` shows plain “Not Found” (not JSON):** that URL is **not** hitting this Node app. Typical causes: the service is a **Render Static Site** (only HTML/CSS/JS — no Express routes), **Root Directory** is not **`backend`**, or **Start Command** is not **`npm start`** from `backend/package.json`. Fix: create or use a **Web Service** with **Root Directory** `backend`, **Build** `npm install`, **Start** `npm start`. Open **`https://YOUR-API.onrender.com/health`** — you should see JSON with `"service":"event-management-api"`. Use **that** hostname as **`API_BASE_URL`** on the static site.
+
 ### Demo accounts (after `database/init_mysql.sql`)
 
 | Role | Username | Password | Landing |

@@ -35,11 +35,32 @@ const publicRoot = path.join(frontendRoot, 'public');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/** Static assets before session: no DB round-trip for /css, /js, /img (and MIME types stay correct). */
-app.use(express.static(publicRoot));
-
 /** Must match any CORS allowlist env (not only ALLOWED_ORIGINS) or session cookies stay SameSite=Lax and cross-site login breaks. */
 const allowCrossOriginUi = getAllowedOrigins().length > 0;
+
+/** Register before static so /api/* is never mistaken for a static file; probes work on any Express Web Service. */
+async function sendHealth(req, res) {
+  try {
+    await pool.query('SELECT 1');
+    const n = getAllowedOrigins().length;
+    res.json({
+      ok: true,
+      service: 'event-management-api',
+      db: 'connected',
+      routes: { postAdminVendor: true },
+      corsAllowlistCount: n,
+      sessionCrossSite: allowCrossOriginUi
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, db: 'error', message: e.message });
+  }
+}
+
+app.get('/api/health', sendHealth);
+app.get('/health', sendHealth);
+
+/** Static assets before session: no DB round-trip for /css, /js, /img (and MIME types stay correct). */
+app.use(express.static(publicRoot));
 const prodLikeCookie =
   process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
 
@@ -89,22 +110,6 @@ app.use('/api', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   next();
-});
-
-app.get('/api/health', async (req, res) => {
-  try {
-    await pool.query('SELECT 1');
-    const n = getAllowedOrigins().length;
-    res.json({
-      ok: true,
-      db: 'connected',
-      routes: { postAdminVendor: true },
-      corsAllowlistCount: n,
-      sessionCrossSite: allowCrossOriginUi
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, db: 'error', message: e.message });
-  }
 });
 
 // Registered on the app first so no sub-router can swallow POST with a 404.
