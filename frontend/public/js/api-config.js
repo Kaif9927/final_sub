@@ -6,6 +6,14 @@
  */
 window.__API_BASE__ = window.__API_BASE__ || '';
 
+/** Optional: DevTools → Console: localStorage.setItem('ems_api_base','https://YOUR-API.onrender.com'); location.reload() */
+(function () {
+  try {
+    var o = localStorage.getItem('ems_api_base');
+    if (o) window.__API_BASE__ = String(o).trim().replace(/\/$/, '');
+  } catch (_) {}
+})();
+
 function apiUrl(path) {
   const base = String(window.__API_BASE__ || '')
     .trim()

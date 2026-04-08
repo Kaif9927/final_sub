@@ -88,6 +88,15 @@ Use this when the **HTML** is a **Static Site** (e.g. `final-sub.onrender.com`) 
 
 Run the build from the **`frontend`** directory so paths resolve; set **`API_BASE_URL`** in the Static Site **Environment** in Render. The inject script rewrites `dist/js/api-config.js` so the browser calls the API host for `fetch` / session cookies.
 
+**If login still says “empty JSON” on the static URL:**
+
+1. Variables belong on the **right** service: **`API_BASE_URL`** only on the **Static Site**; **`ALLOWED_ORIGINS`** only on the **backend** Web Service (`https://your-static.onrender.com`, no trailing slash).
+2. After changing env, run **Manual Deploy → Clear build cache & deploy** on the **Static Site** so the build runs again and injects `API_BASE_URL`.
+3. Open `https://YOUR-STATIC.onrender.com/js/api-config.js` — the first code line should be `window.__API_BASE__ = "https://YOUR-API.onrender.com";`. If it still shows `window.__API_BASE__ || ''`, the inject step did not run or **`API_BASE_URL`** was empty during build.
+4. Quick test without redeploying: in the browser console run  
+   `localStorage.setItem('ems_api_base','https://YOUR-API.onrender.com'); location.reload()`  
+   (then set **`ALLOWED_ORIGINS`** on the backend to your static URL if you have not already).
+
 ### Demo accounts (after `database/init_mysql.sql`)
 
 | Role | Username | Password | Landing |
